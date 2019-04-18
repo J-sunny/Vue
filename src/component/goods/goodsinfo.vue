@@ -28,7 +28,8 @@
                         销售价：<span class="nowPrice">{{goodsData.sell_price}}元</span>
                     </p>
                     <p class="">
-                        购买数量：{{goodsData.stock_quantity}}个
+                        购买数量：
+                        <number :max="goodsData.stock_quantity" @getCount="getInputNum"></number>
                     </p>
                     <p>
                         <mt-button type="primary" size="small">立即购买</mt-button>
@@ -61,6 +62,7 @@
 
 <script>
     import swiper from '../subcomponent/swiper.vue'
+    import number from '../subcomponent/goodsNum.vue'
 
     export default {
         name: "goodsinfo",
@@ -69,11 +71,14 @@
                 banners: [],
                 id: this.$route.params.id,
                 goodsData: [],
-                flag: false
+                flag: false,
+                count: 0,//默认0   拿到的数量
+                numm: 0,
             }
         },
         components: {
-            swiper
+            swiper,
+            number
         },
         methods: {
             //    1.获取轮播图数据
@@ -106,32 +111,58 @@
             },
             //    5点击添加购物车
             addcar() {
-                this.flag = !this.flag
+                this.numm++;
+                if (this.numm < 2) {
+                    this.flag = !this.flag
+                }
+
+                //    点击添加到购物车  把信息保存strre 中的  car
+                //    每一条都是对象  {id:商品的id，count:购买的数量，price：商品的价格，selected：商品的状态}
+                let goodList = {
+                    id: this.id,
+                    count: this.count,
+                    price: this.goodsData.sell_price,
+                    selected: this.selected
+                }
+                this.$store.commit('addToCar', goodList)
             },
             //    6.设置小球的动画
             beforEnter(el) {
-                el.style.transform = 'translate(0,0)'
+                if (this.numm < 2) {
+                    el.style.transform = 'translate(0,0)'
+                }
             },
-            enter(el, done) {
-                el.offsetWidth;
-                //因分辨率不同，需要计算坐标值---》Element.getBoundingClientRect()
-                //获取小球的位置
-                let ball = document.querySelector('.ball').getBoundingClientRect();
-                //获取徽标的位置  关于dom元素和所在的组件没有任何关系
-                let badge=document.querySelector('.mui-badge').getBoundingClientRect();
-                let x=badge.left-ball.left;
-                let y=badge.top-ball.top;
-                el.style.transform =` translate(${x}px,${y}px)`;
-                el.style.transition = "all 1s cubic-bezier(.4,-0.3,.89,.67)"
-                done();
+            enter(el) {
+                if (this.numm < 2) {
+                    el.offsetWidth;
+                    //因分辨率不同，需要计算坐标值---》Element.getBoundingClientRect()
+                    //获取小球的位置
+                    let ball = document.querySelector('.ball').getBoundingClientRect();
+                    //获取徽标的位置  关于dom元素和所在的组件没有任何关系
+                    let badge = document.querySelector('.mui-badge').getBoundingClientRect();
+                    let x = badge.left - ball.left;
+                    let y = badge.top - ball.top;
+                    el.style.transform = ` translate(${x}px,${y}px)`;
+                    el.style.transition = "all 1s cubic-bezier(.4,-0.3,.89,.67)"
+                    // done();
+                }
+
             },
-            afterEnter() {
+            afterEnter(el) {
+                el.style.transition = "all 0s cubic-bezier(.4,-0.3,.89,.67)"
                 this.flag = !this.flag
+                this.numm = 0
+            },
+            getInputNum(num) {
+                console.log("父亲拿到的值" + num)
+                num = num || 1;
+                this.count = num;
             }
         },
         created() {
             this.getBanner();
             this.getGoodsData();
+            this.getInputNum()
         }
     }
 </script>
